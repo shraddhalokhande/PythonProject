@@ -106,14 +106,12 @@ def getAllSurveyDataQuery(connector: dbc.DBConnector) -> str:
     strQueryTemplateForNullColumnn: str = 'NULL AS ANS_Q<QUESTION_ID> '
     strQueryTemplateOuterUnionQuery: str = """SELECT UserId, <SURVEY_ID> as SurveyId, <DYNAMIC_QUESTION_ANSWERS> FROM [User] as u WHERE EXISTS ( SELECT * FROM Answer as a WHERE u.UserId = a.UserId AND a.SurveyId = <SURVEY_ID>)"""
 
-    strCurrentUnionQueryBlock: str = ''
-    strFinalQuery: str = ''
+
 
     #MAIN LOOP, OVER ALL THE SURVEYS
 
     # FOR EACH SURVEY, IN currentSurveyId, WE NEED TO CONSTRUCT THE ANSWER COLUMN QUERIES
 	#inner loop, over the questions of the survey
-
     # Cursors are replaced by a query retrived in a pandas df
     surveyQuery:str = 'SELECT SurveyId FROM Survey ORDER BY SurveyId' 
     surveyQueryDF:pd.DataFrame = connector.ExecuteQuery_withRS(surveyQuery)
@@ -121,14 +119,17 @@ def getAllSurveyDataQuery(connector: dbc.DBConnector) -> str:
     #CARRY ON THE CONVERSION
     #TODO
     #OutterForLoop over surveyId
+        
+    strFinalQuery: str = ''
     for i,data in surveyQueryDF.iterrows():
         print("Value of i : ",i)
         currentSurveyId = data['SurveyId']
         print(currentSurveyId)
+        strCurrentUnionQueryBlock: str = ''
        
         currentQuestionCursorStr:str = """SELECT * FROM ( SELECT SurveyId, QuestionId, 1 as InSurvey FROM SurveyStructure WHERE SurveyId = %s UNION SELECT %s as SurveyId,Q.QuestionId,0 as InSurvey FROM Question as Q WHERE NOT EXISTS(SELECT *FROM SurveyStructure as S WHERE S.SurveyId = %s AND S.QuestionId = Q.QuestionId )) as t ORDER BY QuestionId; """ % (currentSurveyId,currentSurveyId,currentSurveyId)
-
         currentQuestionCursorDF:pd.DataFrame = connector.ExecuteQuery_withRS(currentQuestionCursorStr)
+       
         strColumnsQueryPart:str='';
         for j,currQData in currentQuestionCursorDF.iterrows():
             print(currQData)
@@ -138,39 +139,19 @@ def getAllSurveyDataQuery(connector: dbc.DBConnector) -> str:
 
             
             if currentInSurvey == 0 :
-                strColumnsQueryPart= strColumnsQueryPart \
-                + strQueryTemplateForNullColumnn.replace('<QUESTION_ID>',str(currentQuestionID))
-               # """ SET {strColumnsQueryPart} = {strColumnsQueryPart} 
-               #REPLACE({strQueryTemplateForNullColumnn}, '<QUESTION_ID>',
-               #{currentQuestionID}) """
+                strColumnsQueryPart= strColumnsQueryPart + strQueryTemplateForNullColumnn.replace('<QUESTION_ID>',str(currentQuestionID))
             else :
-                strColumnsQueryPart= strColumnsQueryPart \
-                + strQueryTemplateForAnswerColumn.replace('<QUESTION_ID>',str(currentQuestionID))
-
-               # """ SET {strColumnsQueryPart} = {strColumnsQueryPart} 
-               # REPLACE({strQueryTemplateForAnswerColumn}, '<QUESTION_ID>',
-               # {currentQuestionID}) """
+                strColumnsQueryPart= strColumnsQueryPart + strQueryTemplateForAnswerColumn.replace('<QUESTION_ID>',str(currentQuestionID))
             
-            #"""SET {strColumnsQueryPart} = {strColumnsQueryPart},"""
-            if j != len(currentQuestionCursorDF.index)-1 :
-                 strColumnsQueryPart = strColumnsQueryPart + ', '
+            if j != len(currentQuestionCursorDF.index) - 1 :
+                strColumnsQueryPart = strColumnsQueryPart + ', '
         ###Inner For loop ends
 
         ##BACK IN THE OUTER LOOP OVER SURVEYS
-       #"""SET {strCurrentUnionQueryBlock}  = 
-		#	REPLACE({strQueryTemplateOuterUnionQuery},
-		#			'<DYNAMIC_QUESTION_ANSWERS>',
-		#			{strColumnsQueryPart});"""
-        strCurrentUnionQueryBlock = strCurrentUnionQueryBlock \
-        + strQueryTemplateOuterUnionQuery.replace('<DYNAMIC_QUESTION_ANSWERS>',
-					str(strColumnsQueryPart))
+       
+        strCurrentUnionQueryBlock = strCurrentUnionQueryBlock + strQueryTemplateOuterUnionQuery.replace('<DYNAMIC_QUESTION_ANSWERS>',str(strColumnsQueryPart))
+        strCurrentUnionQueryBlock = strCurrentUnionQueryBlock.replace('<SURVEY_ID>', str(currentSurveyId)) 
 
-        strCurrentUnionQueryBlock = strCurrentUnionQueryBlock.replace('<SURVEY_ID>',
-                                                                     str(currentSurveyId)) 
-
-        #"""SET {strCurrentUnionQueryBlock} = 
-		#	REPLACE({strCurrentUnionQueryBlock}, 
-		#				'<SURVEY_ID>', {currentSurveyId});"""
         strFinalQuery = strFinalQuery + strCurrentUnionQueryBlock
         if i != len(surveyQueryDF.index)-1 :
             strFinalQuery = strFinalQuery + ' UNION '
