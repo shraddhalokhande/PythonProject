@@ -199,7 +199,7 @@ class DBConnector(ABC):
         if(query is not None and self.IsConnected == True):
             if (type(query) is str):
                 if(query):
-                    try:
+                    try:            
                         df:pd.DataFrame = pd.read_sql(query, self._dbConduit)
                         return df
                     except Exception as excp:
@@ -210,4 +210,25 @@ class DBConnector(ABC):
                 raise Exception('SQL query couldn''t be casted as a string')
         else:
             raise ('SQL query object is None')
+
+    def ExecuteQuery(self: object, query: str)-> None:
+        if(query is not None and self.IsConnected == True):
+            if (type(query) is str):
+                if(query):
+                    try:
+                        cursor = self._dbConduit.cursor()
+                        cursor.execute(query)
+                        self._dbConduit.commit()
+                    except Exception as excp:
+                        print(excp)
+                        raise Exception('Couldn''t execute SQL query').with_traceback(excp.__traceback__)
+
+                else:
+                    raise Exception('Empty SQL query to be executed')
+            else:
+                raise Exception('SQL query couldn''t be casted as a string')
+        else:
+            raise ('SQL query object is None')
+    
+    
 
