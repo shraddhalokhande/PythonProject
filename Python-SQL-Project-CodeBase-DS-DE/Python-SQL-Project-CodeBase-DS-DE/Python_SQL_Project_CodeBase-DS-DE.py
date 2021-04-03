@@ -288,10 +288,9 @@ def main():
                      print("\nINFO - Content of SurveyResults table pickled in " + cliArguments['persistencefilepath'] )   
                      refreshViewInDB(connector, getAllSurveyDataQuery(connector), cliArguments['viewname'])
 
-                surveyResultsDF = surveyResultsToDF(connector,cliArguments['viewname'])
-                surveyResultsDF.to_csv(cliArguments["resultsfilepath"], index=False, header=True)
-                print("\nDONE - Results exported in " + cliArguments["resultsfilepath"] + "\n")
-
+            surveyResultsDF = surveyResultsToDF(connector,cliArguments['viewname'])
+            surveyResultsDF.to_csv(cliArguments["resultsfilepath"], index=False, header=True)
+            print("\nDONE - Results exported in " + cliArguments["resultsfilepath"] + "\n")
             connector.Close()
         except Exception as excp:
             print(excp)

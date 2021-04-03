@@ -13,10 +13,10 @@
     <RootNamespace>A19-SoftwareEng-SQL-Project-Sample-Solution</RootNamespace>
     <LaunchProvider>Standard Python launcher</LaunchProvider>
     <CommandLineArguments>-s Shraddha-PC -d Survey_Sample_A19 -u sa -p Db1234  -t True  -v vw_AllSurveyData -f ./PersistenceSurveyStruct.csv  -r ./ViewResultSet.csv</CommandLineArguments>
-    <EnableNativeCodeDebugging>True</EnableNativeCodeDebugging>
+    <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
     <InterpreterArguments>
     </InterpreterArguments>
-    <InterpreterId>MSBuild|Python 3.7|$(MSBuildProjectFullPath)</InterpreterId>
+    <InterpreterId>MSBuild|env|$(MSBuildProjectFullPath)</InterpreterId>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
@@ -54,15 +54,13 @@
     <Content Include="myTools\README.md" />
   </ItemGroup>
   <ItemGroup>
-    <InterpreterReference Include="CondaEnv|CondaEnv|env_36" />
     <InterpreterReference Include="Global|ContinuumAnalytics|Anaconda38-64" />
-    <InterpreterReference Include="Global|PythonCore|3.9" />
   </ItemGroup>
   <ItemGroup>
-    <Interpreter Include="Python 3.7\">
-      <Id>Python 3.7</Id>
+    <Interpreter Include="env\env\">
+      <Id>env</Id>
       <Version>3.7</Version>
-      <Description>Python 3.7 (Python 3.7 (64-bit))</Description>
+      <Description>env (Python 3.7 (64-bit))</Description>
       <InterpreterPath>Scripts\python.exe</InterpreterPath>
       <WindowsInterpreterPath>Scripts\pythonw.exe</WindowsInterpreterPath>
       <PathEnvironmentVariable>PYTHONPATH</PathEnvironmentVariable>
