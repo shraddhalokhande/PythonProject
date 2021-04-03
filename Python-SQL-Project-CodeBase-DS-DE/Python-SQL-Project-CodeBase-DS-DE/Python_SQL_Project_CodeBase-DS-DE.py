@@ -1,8 +1,5 @@
-import argparse as agp
 import getpass
-import os.path 
 
-from os import path
 from myTools import MSSQL_DBConnector as mssql
 from myTools import DBConnector as dbc
 import myTools.ContentObfuscation as ce
@@ -14,6 +11,26 @@ except:
     mi.installModule("pandas")
     import pandas as pd
 
+try:
+    import argparse as agp
+except:
+    mi.installModule("argparse")
+    import argparse as agp
+
+try:
+    import os.path 
+except:
+    mi.installModule("os.path")
+    import os.path
+
+
+
+try:
+    import pyodbc
+except ImportError:
+    subprocess.check_call([sys.executable, "-m", "pip", "install", 'pyodbc'])
+finally:
+    import pyodbc
 
 
 def printSplashScreen():
@@ -40,7 +57,7 @@ def processCLIArguments()-> dict:
                                 action='store', default= None, help="Sets the SQL Server DSN descriptor file - Take precedence over all access parameters", type=str)
         argParser.add_argument("-s", "--dbserver", dest="dbserver", \
                                 action='store', default= None, help="Sets the SQL Server", type=str) #dbServer
-        argParser.add_argument("-b", "--dbname", dest="dbname", \
+        argParser.add_argument("-d", "--dbname", dest="dbname", \
                                 action='store', default= None, help="Sets the SQL database name", type=str) #dbname
         argParser.add_argument("-u", "--dbusername", dest="dbusername", \
                                 action='store', default= None, help="Sets the SQL database username", type=str)
@@ -55,7 +72,7 @@ def processCLIArguments()-> dict:
         argParser.add_argument("-r", "--resultsfilepath", dest="resultsfilepath", \
                                 action='store', default= None, help="Sets the SQL result file path", type=str)
 
-        #-s Shraddha-PC -b Survey_Sample_A19 -u sa -p Db1234  -t True  -v vw_AllSurveyData -f filePath -r result 
+        #-s Shraddha-PC -d Survey_Sample_A19 -u sa -p Db1234  -t True  -v vw_AllSurveyData -f filePath -r result 
         argParsingResults = argParser.parse_args()
         print(argParsingResults)
         #TODO
@@ -244,7 +261,7 @@ def main():
                 viewname = cliArguments["viewname"])
             connector.Open()
           
-            surveyStructureDF:pd.DataFrame = getSurveyStructure(connector)
+            surveyStructureDF:pd.DataFrame = getSurveyStructure(connector) #selecting data dbo.Surveystructure table
 
             if(doesPersistenceFileExist(cliArguments['persistencefilepath']) == False):
 
