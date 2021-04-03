@@ -147,7 +147,7 @@ class DBConnector(ABC):
 
                     if('windows' in identifiedOS.lower()):
 
-                       # if(self.dbDSN is not None):
+                      # if(self.dbDSN is not None):
                         #        self._m_conduit = \
                          #           pyodbc.connect('DSN=' + self.dbDSN + \
                           #          ';UID=' + self.dbUserName + \

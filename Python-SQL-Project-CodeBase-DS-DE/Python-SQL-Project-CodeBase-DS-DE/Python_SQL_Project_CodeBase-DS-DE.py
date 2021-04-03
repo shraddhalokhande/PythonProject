@@ -42,19 +42,22 @@ def printSplashScreen():
     print("*************************************************************************************************\n\n")
 
 
-
+#Process the command line arguments and returns them in Dictionary
 def processCLIArguments()-> dict:
     
     retParametersDictionary:dict = None
     
-    dbpassword:str = ''
+    dbpassword:str =''  #b'gAAAAABgaMgZ3jjwkDoGLWkaZp-VnI03hPbsKlUEX5RCqn6vHEad7t-7vnRX-JlIhNonzC6MF_Pt8Em2-3W0PFYPz-5anKcbWA=='
     obfuscator: ce.ContentObfuscation = ce.ContentObfuscation()
 
     try:
         argParser:agp.ArgumentParser = agp.ArgumentParser(add_help=True)
 
+
         argParser.add_argument("-n", "--DSN", dest="dsn", \
                                 action='store', default= None, help="Sets the SQL Server DSN descriptor file - Take precedence over all access parameters", type=str)
+
+        #Parsing arguments from command line
         argParser.add_argument("-s", "--dbserver", dest="dbserver", \
                                 action='store', default= None, help="Sets the SQL Server", type=str) #dbServer
         argParser.add_argument("-d", "--dbname", dest="dbname", \
@@ -72,8 +75,8 @@ def processCLIArguments()-> dict:
         argParser.add_argument("-r", "--resultsfilepath", dest="resultsfilepath", \
                                 action='store', default= None, help="Sets the SQL result file path", type=str)
 
-        #-s Shraddha-PC -d Survey_Sample_A19 -u sa -p Db1234  -t True  -v vw_AllSurveyData -f filePath -r result 
-        argParsingResults = argParser.parse_args()
+        #-s Shraddha-PC -d Survey_Sample_A19 -u sa -t True  -v vw_AllSurveyData -f filePath -r result 
+        argParsingResults = argParser.parse_args() 
         print(argParsingResults)
         #TODO
         retParametersDictionary = {
@@ -94,9 +97,9 @@ def processCLIArguments()-> dict:
 
     return retParametersDictionary
 
-
+#Selecting Data from SurveyStructure DB and converting to dataframes
+#Returns data of surverystructure table in the formate of dataframes
 def getSurveyStructure(connector: mssql.MSSQL_DBConnector) -> pd.DataFrame:
-    
     surveyStructResults = None
     surveyQuery:str = 'SELECT * FROM SurveyStructure' 
     surveyStructResults:pd.DataFrame = connector.ExecuteQuery_withRS(surveyQuery)
@@ -104,7 +107,9 @@ def getSurveyStructure(connector: mssql.MSSQL_DBConnector) -> pd.DataFrame:
     return surveyStructResults
 
 
-
+#REtuens whether given file path exist or not
+#true if exists
+#false if doesnt exists
 def doesPersistenceFileExist(persistenceFilePath: str)-> bool:
     success = True
     if os.path.exists(persistenceFilePath):
@@ -123,10 +128,11 @@ def doesPersistenceFileExist(persistenceFilePath: str)-> bool:
     return success
 
 
-
+#Returns whether persistence file directory is writable or not
 def isPersistenceFileDirectoryWritable(persistenceFilePath: str)-> bool:
     success = True
     #TODO
+    #getting the directoryname
     pdir = os.path.dirname(persistenceFilePath)
     # target is creatable if parent dir is writable
     if os.access(pdir, os.W_OK):
@@ -135,10 +141,13 @@ def isPersistenceFileDirectoryWritable(persistenceFilePath: str)-> bool:
         os.chmod(persistenceFilePath, 777)
     return success
 
-
+#Comparing Existing(Last stored) data of survery structure db(persistent) with current query output (surveyStructResults)
+#Returns True if the data is same
+#Returns False if the data is different
 def compareDBSurveyStructureToPersistenceFile(surveyStructResults:pd.DataFrame, persistenceFilePath: str) -> bool:
     #TODO
     same_file = False
+    #comparision should be datafrmes so the conversion is required
     persistenceSurveydf = pd.read_csv(persistenceFilePath)
     try:
         if persistenceSurveydf.equals(surveyStructResults):
@@ -149,7 +158,9 @@ def compareDBSurveyStructureToPersistenceFile(surveyStructResults:pd.DataFrame, 
 
 
 
-
+#Function to replicate dbo.fn_GetAllSurveyDataSQL() functionality
+# Returns the Final Query, which will be the query of the view.
+#
 def getAllSurveyDataQuery(connector: dbc.DBConnector) -> str:
 
     #IN THIS FUNCTION YOU MUST STRICTLY CONVERT THE CODE OF getAllSurveyData written in T-SQL, available in Survey_Sample_A19 and seen in class
@@ -177,7 +188,6 @@ def getAllSurveyDataQuery(connector: dbc.DBConnector) -> str:
     strFinalQuery: str = ''
     for i,data in surveyQueryDF.iterrows():
         currentSurveyId = data['SurveyId']
-        print(currentSurveyId)
         strCurrentUnionQueryBlock: str = ''
        
         currentQuestionCursorStr:str = """SELECT * FROM ( SELECT SurveyId, QuestionId, 1 as InSurvey FROM SurveyStructure WHERE SurveyId = %s UNION SELECT %s as SurveyId,Q.QuestionId,0 as InSurvey FROM Question as Q WHERE NOT EXISTS(SELECT *FROM SurveyStructure as S WHERE S.SurveyId = %s AND S.QuestionId = Q.QuestionId )) as t ORDER BY QuestionId; """ % (currentSurveyId,currentSurveyId,currentSurveyId)
@@ -213,6 +223,11 @@ def getAllSurveyDataQuery(connector: dbc.DBConnector) -> str:
 
 
 
+#replication of the dbo.trg_refreshSurveyView which will create the view
+#accepted the by the argument 'viewName'
+# 'baseViewQuery' accepts the final query written by getAllSurveyDataQuery() method
+#Refresh the trigger, ultimately it will  update the view query
+#to make sure query is 'alwaysFresh'
 def refreshViewInDB(connector: dbc.DBConnector, baseViewQuery:str, viewName:str)->None:
     
     if(connector.IsConnected == True):
@@ -226,9 +241,9 @@ def refreshViewInDB(connector: dbc.DBConnector, baseViewQuery:str, viewName:str)
         
 
 
-
+#Returns the data set by  executing the View
 def surveyResultsToDF(connector: dbc.DBConnector, viewName:str)->pd.DataFrame:    
-    results:pd.DataFrame =connector.ExecuteQuery_withRS( "Select * from "+viewName)
+    results:pd.DataFrame =connector.ExecuteQuery_withRS( "Select * from "+viewName) 
     return results;
     
 
@@ -241,6 +256,7 @@ def main():
     printSplashScreen()
 
     try:
+        #Processing the arguments accepted from the command prompt
         cliArguments = processCLIArguments()
     except Except as excp:
         print("Exiting")
@@ -255,14 +271,19 @@ def main():
         #See the processCLIArguments() function for accepted parameters
 
         try:
+            #Calling to get db connect object
             connector = mssql.MSSQL_DBConnector(DSN = cliArguments["dsn"], dbserver = cliArguments["dbserver"], \
                 dbname = cliArguments["dbname"], dbusername = cliArguments["dbusername"], \
                 dbpassword = cliArguments["dbuserpassword"], trustedmode = cliArguments["trustedmode"], \
                 viewname = cliArguments["viewname"])
             connector.Open()
-          
+           
+           #Retriving the data of survey structure  table getting it to data frames
             surveyStructureDF:pd.DataFrame = getSurveyStructure(connector) #selecting data dbo.Surveystructure table
 
+            #Cehck whether there is last stored serveystructure table data? bye check if persistence file exist?
+            #if not then go to then create the file and store the result of "surveyStructureDF" in the persistent file
+            # else comapre the current result with last stored result
             if(doesPersistenceFileExist(cliArguments['persistencefilepath']) == False):
 
                if(isPersistenceFileDirectoryWritable(cliArguments['persistencefilepath']) == True): 
@@ -273,24 +294,41 @@ def main():
                     print("\nINFO - Content of SurveyResults table pickled in " + cliArguments['persistencefilepath'] + "\n")                   
                     #refresh the view using the function written for this purpose
                     #TODO
+                    #Refresh the trigger, ultimately it will  update the view query
+                    #to make sure query is 'alwaysFresh'
                     refreshViewInDB(connector, getAllSurveyDataQuery(connector), cliArguments['viewname'])
+                    doWriteResultCSV=True;
                     
             else:
                 #Compare the existing pickled SurveyStructure file with surveyStructureDF
                 # What do you need to do if the dataframe and the pickled file are different?
-                #TODO
-               
+                #TODO     
+                #Comaprision returns YES if files are same        
                 if compareDBSurveyStructureToPersistenceFile(surveyStructureDF, cliArguments["persistencefilepath"]) :
                     print("New SurveyStructure is same as saved one, do nothing")
+                    if(doesPersistenceFileExist(cliArguments['resultsfilepath']) == False):
+                        doWriteResultCSV=True
+                    else:
+                        doWriteResultCSV=False
+
                 else:
                      print('SurveyStructure is different than saved one, need to trigger view')
                      surveyStructureDF.to_csv(cliArguments['persistencefilepath'], index=False, header=True)
                      print("\nINFO - Content of SurveyResults table pickled in " + cliArguments['persistencefilepath'] )   
-                     refreshViewInDB(connector, getAllSurveyDataQuery(connector), cliArguments['viewname'])
+                     #SruveyStructure table data is  differnt than last stored data
+                     #Refresh the trigger, ultimately it will  update the view query
+                     #to make sure query is 'alwaysFresh'
+                     refreshViewInDB(connector, getAllSurveyDataQuery(connector), cliArguments['viewname']) 
+                     doWriteResultCSV=True
+            if(doWriteResultCSV):
+                print("\n Please wait, writing data into " + cliArguments["resultsfilepath"] + " it may take a while !!! \n")
+                surveyResultsDF = surveyResultsToDF(connector,cliArguments['viewname'])
+                surveyResultsDF.to_csv(cliArguments["resultsfilepath"], index=False, header=True)
+                print("\nDONE - Results exported in " + cliArguments["resultsfilepath"] + "\n")
+            else:
+                 print("\nDONE - Results in " + cliArguments["resultsfilepath"] + " is still valid\n")
 
-            surveyResultsDF = surveyResultsToDF(connector,cliArguments['viewname'])
-            surveyResultsDF.to_csv(cliArguments["resultsfilepath"], index=False, header=True)
-            print("\nDONE - Results exported in " + cliArguments["resultsfilepath"] + "\n")
+
             connector.Close()
         except Exception as excp:
             print(excp)

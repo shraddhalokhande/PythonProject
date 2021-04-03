@@ -16,7 +16,9 @@ class ContentObfuscation:
     __fernetK:bytes = b'M0tSMzdyZ083eEhkOXF3MGtydkd1Vlo0UUJwYVhlRzdlRWptQW1QbmlDbz0='
 
     def __init__(self: object):
+        #key1=b'3KR37rgO7xHd9qw0krvGuVZ4QBpaXeG7eEjmAmPniCo='
         self._cipher_suite = f.Fernet(base64.b64decode(ContentObfuscation.__fernetK))
+    
 
     def obfuscate(self: object, clearText: str)-> str:
         return (self._cipher_suite.encrypt(clearText.encode())).decode()

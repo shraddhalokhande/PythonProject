@@ -12,7 +12,7 @@
     <Name>A19-SoftwareEng-SQL-Project-Sample-Solution</Name>
     <RootNamespace>A19-SoftwareEng-SQL-Project-Sample-Solution</RootNamespace>
     <LaunchProvider>Standard Python launcher</LaunchProvider>
-    <CommandLineArguments>-s Shraddha-PC -d Survey_Sample_A19 -u sa -p Db1234  -t True  -v vw_AllSurveyData -f ./PersistenceSurveyStruct.csv  -r ./ViewResultSet.csv</CommandLineArguments>
+    <CommandLineArguments>-s Shraddha-PC -d Survey_Sample_A19 -u sa -p Db1234 -t True -v vw_AllSurveyData -f ./PersistenceSurveyStruct.csv  -r ./ViewResultSet.csv</CommandLineArguments>
     <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
     <InterpreterArguments>
     </InterpreterArguments>
